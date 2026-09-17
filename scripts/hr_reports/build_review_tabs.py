@@ -163,6 +163,11 @@ def categorize(d):
     if d['__left']:
         return ('Left Company', 'Confirmed left the company by the salon manager - no longer active staff.')
 
+    if action.strip().lower() == 'cancellation' and 'confirmed by owner' in combined and 'does not actually work' in combined:
+        return ('Needs Cancellation - Not Actually Working',
+                'Owner confirmed this person does not actually work here - work permit was registered but never '
+                'used (residency/permit only, no real employment). Cancel with MOHRE/PRO.')
+
     if 'confirmed by manager' in combined and 'no work permit' in combined:
         return ('Undocumented - No Permit (Manager Confirmed)',
                 'Manager has confirmed this person works with NO MOHRE work permit at all. Urgent legal/PRO action needed.')
@@ -225,6 +230,7 @@ CAT_COLORS = {
     'Absconded': 'C00000',
     'Terminated': '808080',
     'Left Company': 'A6A6A6',
+    'Needs Cancellation - Not Actually Working': 'FF6600',
     'Undocumented - No Permit (Manager Confirmed)': 'FF0000',
     'Own Visa - No Salon Work Permit': 'BDD7EE',
     'MOHRE Mismatch - Needs Review': 'FFFF00',
@@ -234,7 +240,8 @@ CAT_COLORS = {
     'No Work Permit - Not on MOHRE List': 'FFC7CE',
     'OK - No Flag': 'FFFFFF',
 }
-CAT_TEXT_WHITE = {'Absconded', 'Terminated', 'Left Company', 'Undocumented - No Permit (Manager Confirmed)'}
+CAT_TEXT_WHITE = {'Absconded', 'Terminated', 'Left Company', 'Undocumented - No Permit (Manager Confirmed)',
+                   'Needs Cancellation - Not Actually Working'}
 
 def style_header_row(ws, row, ncols):
     for c in range(1, ncols + 1):
@@ -343,6 +350,8 @@ legend_items = [
     ('Absconded', 'Flagged as absconded / left with no notice.'),
     ('Terminated', 'Employment ended (termination) - not absconding; check Warnings/Gratuity for settlement status.'),
     ('Left Company', 'Confirmed left the company by the salon manager - not absconding, no MOHRE issue implied.'),
+    ('Needs Cancellation - Not Actually Working', 'Owner confirmed this person does not actually work here - work '
+     'permit/residency was registered but never used. Needs MOHRE/PRO cancellation, not a document chase.'),
     ('No Work Permit - Salon Not Yet MOHRE-Verified', "No work permit on file, and this salon's official MOHRE list has not been received yet."),
     ('Awaiting Official MOHRE List', "This salon's official MOHRE list has not been received yet - cannot cross-check."),
     ('No Work Permit - Not on MOHRE List', 'No work permit on file and no match on the official MOHRE list (verified salons only).'),
