@@ -1,12 +1,24 @@
-import openpyxl, re, shutil
+import openpyxl, re, shutil, subprocess, sys, os
 from collections import defaultdict
 from difflib import SequenceMatcher
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openpyxl.utils import get_column_letter
 
-SRC = 'input.xlsx'
-OUT = 'Comprehensive_Salons_and_Staff_Register_EN_with_Payroll_12_REVIEWED.xlsx'
-shutil.copy(SRC, OUT)
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+
+def recalc(path):
+    """Recalculate all formulas via LibreOffice so cached values are fresh.
+    openpyxl strips cached formula values on every save, so this MUST run
+    right before any data_only=True read and again after the final save."""
+    result = subprocess.run([sys.executable, os.path.join(SCRIPT_DIR, 'recalc.py'), path, '270'],
+                             capture_output=True, text=True)
+    print('recalc:', result.stdout.strip() or result.stderr.strip())
+
+SRC = sys.argv[1] if len(sys.argv) > 1 else 'input.xlsx'
+OUT = sys.argv[2] if len(sys.argv) > 2 else 'Comprehensive_Salons_and_Staff_Register_EN_with_Payroll_12_REVIEWED.xlsx'
+if os.path.abspath(SRC) != os.path.abspath(OUT):
+    shutil.copy(SRC, OUT)
+recalc(OUT)
 
 wb = openpyxl.load_workbook(OUT, data_only=True)  # read cached values for analysis
 salons = ['ALEKSANDRA', 'UNIQUE YOU', 'NISANTASI', 'THE LAB - Branch', 'THE LAB - HQ', 'HAIR TAG']
@@ -36,8 +48,9 @@ for sname in salons:
         d['__salon'] = sname
         d['__row'] = r
         raw_name = str(d['Name'])
-        d['__absconded'] = raw_name.strip().startswith('🔴')
-        clean_name = raw_name.replace('🔴 ABSCONDED —', '').replace('🔴 ABSCONDED -', '').strip()
+        d['__absconded'] = 'ABSCONDED' in raw_name.upper()
+        d['__terminated'] = 'TERMINATED' in raw_name.upper()
+        clean_name = re.sub(r'^🔴\s*(ABSCONDED|TERMINATED)\s*[—-]\s*', '', raw_name.strip(), flags=re.IGNORECASE).strip()
         d['__cleanname'] = clean_name
         d['__norm'] = norm(clean_name)
         records.append(d)
@@ -128,6 +141,9 @@ def categorize(d):
     if d['__absconded']:
         return ('Absconded', 'Flagged absconded / left with no notice - see Absconded tab.')
 
+    if d['__terminated']:
+        return ('Terminated', 'Employment ended (termination) - see Warnings / Gratuity Calculator for settlement status.')
+
     if 'confirmed by manager' in combined and 'no work permit' in combined:
         return ('Undocumented - No Permit (Manager Confirmed)',
                 'Manager has confirmed this person works with NO MOHRE work permit at all. Urgent legal/PRO action needed.')
@@ -188,6 +204,7 @@ border = Border(left=thin, right=thin, top=thin, bottom=thin)
 
 CAT_COLORS = {
     'Absconded': 'C00000',
+    'Terminated': '808080',
     'Undocumented - No Permit (Manager Confirmed)': 'FF0000',
     'Own Visa - No Salon Work Permit': 'BDD7EE',
     'MOHRE Mismatch - Needs Review': 'FFFF00',
@@ -197,7 +214,7 @@ CAT_COLORS = {
     'No Work Permit - Not on MOHRE List': 'FFC7CE',
     'OK - No Flag': 'FFFFFF',
 }
-CAT_TEXT_WHITE = {'Absconded', 'Undocumented - No Permit (Manager Confirmed)'}
+CAT_TEXT_WHITE = {'Absconded', 'Terminated', 'Undocumented - No Permit (Manager Confirmed)'}
 
 def style_header_row(ws, row, ncols):
     for c in range(1, ncols + 1):
@@ -304,6 +321,7 @@ legend_items = [
     ('MOHRE Mismatch - Needs Review', 'Discrepancy between the official MOHRE list and the salon register (missing row, or not found on official list) - needs your review.'),
     ('Undocumented - No Permit (Manager Confirmed)', 'Manager has confirmed this person works with NO work permit at all. Highest priority / legal risk.'),
     ('Absconded', 'Flagged as absconded / left with no notice.'),
+    ('Terminated', 'Employment ended (termination) - not absconding; check Warnings/Gratuity for settlement status.'),
     ('No Work Permit - Salon Not Yet MOHRE-Verified', "No work permit on file, and this salon's official MOHRE list has not been received yet."),
     ('Awaiting Official MOHRE List', "This salon's official MOHRE list has not been received yet - cannot cross-check."),
     ('No Work Permit - Not on MOHRE List', 'No work permit on file and no match on the official MOHRE list (verified salons only).'),
@@ -393,6 +411,7 @@ for sheet_name in ['Duplicate Employees', 'MOL vs Employee Match']:
 wb_out._sheets = [wb_out[s] for s in order]
 
 wb_out.save(OUT)
+recalc(OUT)  # openpyxl just stripped every cached formula value again - restore them
 print('Saved', OUT)
 print('Duplicate groups:', len(dup_groups), 'records involved:', sum(len(v) for v in dup_groups.values()))
 print(Counter(d['__category'] for d in records))

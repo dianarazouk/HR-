@@ -1,5 +1,7 @@
 import openpyxl
 import sys
+import os
+import subprocess
 from datetime import datetime, timedelta
 from reportlab.lib.pagesizes import A4
 from reportlab.lib import colors
@@ -10,6 +12,12 @@ from reportlab.platypus import (SimpleDocTemplate, Paragraph, Spacer, Table, Tab
 from reportlab.lib.enums import TA_LEFT, TA_CENTER
 
 FILE = sys.argv[1] if len(sys.argv) > 1 else 'Comprehensive_Salons_and_Staff_Register_EN_with_Payroll_12_REVIEWED.xlsx'
+
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+result = subprocess.run([sys.executable, os.path.join(SCRIPT_DIR, 'recalc.py'), FILE, '270'],
+                         capture_output=True, text=True)
+print('recalc:', result.stdout.strip() or result.stderr.strip())
+
 wb = openpyxl.load_workbook(FILE, data_only=True)
 TODAY = datetime.strptime(sys.argv[2], '%Y-%m-%d') if len(sys.argv) > 2 else datetime.now()
 
@@ -119,11 +127,12 @@ def build_story(period_label, start, end, is_monthly):
         'Own Visa - No Salon Work Permit': 'Works at the salon on independent/own residency - no company permit.',
         'Undocumented - No Permit (Manager Confirmed)': 'Working with NO permit at all - urgent legal risk.',
         'Absconded': 'Flagged as absconded / left with no notice.',
+        'Terminated': 'Employment ended (termination) - not absconding.',
         'No Work Permit - Salon Not Yet MOHRE-Verified': "No permit on file; salon's official list not yet received.",
         'Awaiting Official MOHRE List': "Official MOHRE list not yet received for this salon.",
     }
     order = ['MOHRE Confirmed', 'MOHRE Mismatch - Needs Review', 'Own Visa - No Salon Work Permit',
-             'Undocumented - No Permit (Manager Confirmed)', 'Absconded',
+             'Undocumented - No Permit (Manager Confirmed)', 'Absconded', 'Terminated',
              'No Work Permit - Salon Not Yet MOHRE-Verified', 'Awaiting Official MOHRE List']
     for cat in order:
         if cat_counts.get(cat):
