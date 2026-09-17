@@ -128,11 +128,12 @@ def build_story(period_label, start, end, is_monthly):
         'Undocumented - No Permit (Manager Confirmed)': 'Working with NO permit at all - urgent legal risk.',
         'Absconded': 'Flagged as absconded / left with no notice.',
         'Terminated': 'Employment ended (termination) - not absconding.',
+        'Left Company': 'Confirmed left the company by the salon manager.',
         'No Work Permit - Salon Not Yet MOHRE-Verified': "No permit on file; salon's official list not yet received.",
         'Awaiting Official MOHRE List': "Official MOHRE list not yet received for this salon.",
     }
     order = ['MOHRE Confirmed', 'MOHRE Mismatch - Needs Review', 'Own Visa - No Salon Work Permit',
-             'Undocumented - No Permit (Manager Confirmed)', 'Absconded', 'Terminated',
+             'Undocumented - No Permit (Manager Confirmed)', 'Absconded', 'Terminated', 'Left Company',
              'No Work Permit - Salon Not Yet MOHRE-Verified', 'Awaiting Official MOHRE List']
     for cat in order:
         if cat_counts.get(cat):

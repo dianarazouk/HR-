@@ -55,7 +55,8 @@ for sname in salons:
         raw_name = str(d['Name'])
         d['__absconded'] = 'ABSCONDED' in raw_name.upper()
         d['__terminated'] = 'TERMINATED' in raw_name.upper()
-        clean_name = re.sub(r'^🔴\s*(ABSCONDED|TERMINATED)\s*[—-]\s*', '', raw_name.strip(), flags=re.IGNORECASE).strip()
+        d['__left'] = 'LEFT' in raw_name.upper() and '🔴' in raw_name
+        clean_name = re.sub(r'^🔴\s*(ABSCONDED|TERMINATED|LEFT)\s*[—-]\s*', '', raw_name.strip(), flags=re.IGNORECASE).strip()
         d['__cleanname'] = clean_name
         d['__norm'] = norm(clean_name)
         records.append(d)
@@ -159,6 +160,9 @@ def categorize(d):
     if d['__terminated']:
         return ('Terminated', 'Employment ended (termination) - see Warnings / Gratuity Calculator for settlement status.')
 
+    if d['__left']:
+        return ('Left Company', 'Confirmed left the company by the salon manager - no longer active staff.')
+
     if 'confirmed by manager' in combined and 'no work permit' in combined:
         return ('Undocumented - No Permit (Manager Confirmed)',
                 'Manager has confirmed this person works with NO MOHRE work permit at all. Urgent legal/PRO action needed.')
@@ -220,6 +224,7 @@ border = Border(left=thin, right=thin, top=thin, bottom=thin)
 CAT_COLORS = {
     'Absconded': 'C00000',
     'Terminated': '808080',
+    'Left Company': 'A6A6A6',
     'Undocumented - No Permit (Manager Confirmed)': 'FF0000',
     'Own Visa - No Salon Work Permit': 'BDD7EE',
     'MOHRE Mismatch - Needs Review': 'FFFF00',
@@ -229,7 +234,7 @@ CAT_COLORS = {
     'No Work Permit - Not on MOHRE List': 'FFC7CE',
     'OK - No Flag': 'FFFFFF',
 }
-CAT_TEXT_WHITE = {'Absconded', 'Terminated', 'Undocumented - No Permit (Manager Confirmed)'}
+CAT_TEXT_WHITE = {'Absconded', 'Terminated', 'Left Company', 'Undocumented - No Permit (Manager Confirmed)'}
 
 def style_header_row(ws, row, ncols):
     for c in range(1, ncols + 1):
@@ -337,6 +342,7 @@ legend_items = [
     ('Undocumented - No Permit (Manager Confirmed)', 'Manager has confirmed this person works with NO work permit at all. Highest priority / legal risk.'),
     ('Absconded', 'Flagged as absconded / left with no notice.'),
     ('Terminated', 'Employment ended (termination) - not absconding; check Warnings/Gratuity for settlement status.'),
+    ('Left Company', 'Confirmed left the company by the salon manager - not absconding, no MOHRE issue implied.'),
     ('No Work Permit - Salon Not Yet MOHRE-Verified', "No work permit on file, and this salon's official MOHRE list has not been received yet."),
     ('Awaiting Official MOHRE List', "This salon's official MOHRE list has not been received yet - cannot cross-check."),
     ('No Work Permit - Not on MOHRE List', 'No work permit on file and no match on the official MOHRE list (verified salons only).'),
