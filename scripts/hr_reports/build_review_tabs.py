@@ -22,7 +22,7 @@ recalc(OUT)
 
 wb = openpyxl.load_workbook(OUT, data_only=True)  # read cached values for analysis
 salons = ['ALEKSANDRA', 'UNIQUE YOU', 'NISANTASI', 'THE LAB - Branch', 'THE LAB - HQ', 'HAIR TAG']
-verified_salons = {'ALEKSANDRA', 'UNIQUE YOU', 'NISANTASI'}
+verified_salons = {'ALEKSANDRA', 'UNIQUE YOU', 'NISANTASI', 'THE LAB - Branch'}
 
 def norm(s):
     if not s:
@@ -58,7 +58,10 @@ for sname in salons:
 # ---------- 2. Load MOHRE Verification sheet into a lookup ----------
 mws = wb['MOHRE Verification']
 mohre = defaultdict(list)  # (salon_norm, name_norm) -> list of entries
-for r in range(5, 59):
+for r in range(5, mws.max_row + 1):
+    salon_m = mws.cell(row=r, column=1).value
+    if salon_m == 'Legend:':
+        break
     row = [mws.cell(row=r, column=c).value for c in range(1, 7)]
     salon_m, name_m, status, card, expiry, detail = row
     if not salon_m or not name_m or salon_m == 'Salon':
