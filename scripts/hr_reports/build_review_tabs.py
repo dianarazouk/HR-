@@ -22,7 +22,12 @@ recalc(OUT)
 
 wb = openpyxl.load_workbook(OUT, data_only=True)  # read cached values for analysis
 salons = ['ALEKSANDRA', 'UNIQUE YOU', 'NISANTASI', 'THE LAB - Branch', 'THE LAB - HQ', 'HAIR TAG']
-verified_salons = {'ALEKSANDRA', 'UNIQUE YOU', 'NISANTASI', 'THE LAB - Branch', 'THE LAB - HQ'}
+verified_salons = {'ALEKSANDRA', 'UNIQUE YOU', 'NISANTASI', 'THE LAB - Branch'}
+# NOTE: THE LAB - HQ is NOT in verified_salons - individual work-permit documents (not a full
+# establishment roster) confirmed 5 HQ employees hold real permits under establishment 1278237,
+# which contradicts the owner's 17/09/2026 statement that HQ shares Branch's 2063109 license.
+# Until a full official list for 1278237 is received, unmatched HQ staff fall back to
+# "Awaiting Official MOHRE List" rather than being flagged as a confirmed mismatch.
 
 def norm(s):
     if not s:
@@ -81,10 +86,11 @@ def name_ratio(a, b):
     return max(SequenceMatcher(None, a, b).ratio(),
                SequenceMatcher(None, token_sort(a), token_sort(b)).ratio())
 
-# THE LAB - Branch and THE LAB - HQ are two physical locations under one MOHRE
-# establishment license (2063109) - confirmed by the salon owner 17/09/2026. One
-# official work-permit list covers staff at both locations, so match HQ against it too.
-MOHRE_SALON_ALIAS = {'THE LAB - HQ': 'THE LAB - Branch'}
+# NOTE: an earlier version of this script aliased THE LAB - HQ to THE LAB - Branch's
+# MOHRE list, based on the owner's statement that they share establishment 2063109.
+# Individual work-permit documents received 17/09/2026 show establishment 1278237 for
+# HQ staff instead, so that alias has been removed - HQ is matched on its own record now.
+MOHRE_SALON_ALIAS = {}
 
 def find_mohre_entry(salon, name_norm):
     """Exact match first, else best fuzzy match (>=0.84) within the same salon - catches
