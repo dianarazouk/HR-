@@ -20,7 +20,10 @@ for r in range(1, ws.max_row + 1):
 new_rows = []
 new_rows.append(('__HEADER__', 'Updated from official MOHRE establishment lists received 17/09/2026 '
                                 '(ALEKSANDRA RP247180927AE, UNIQUE YOU RP247180977AE, NISANTASI RP247181016AE, '
-                                'THE LAB - Branch RP247181061AE/RP247181098AE).', None, None, None, None))
+                                'THE LAB RP247181061AE/RP247181098AE - establishment 2063109). '
+                                'THE LAB - Branch and THE LAB - HQ share this one MOHRE establishment license '
+                                '(2063109) across two physical locations - confirmed by the owner 17/09/2026 - '
+                                'so this single 15-person list is checked against BOTH internal tabs.', None, None, None, None))
 
 # ALEKSANDRA - previously not on file, now confirmed on the official list
 new_rows += [

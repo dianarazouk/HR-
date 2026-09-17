@@ -22,7 +22,7 @@ recalc(OUT)
 
 wb = openpyxl.load_workbook(OUT, data_only=True)  # read cached values for analysis
 salons = ['ALEKSANDRA', 'UNIQUE YOU', 'NISANTASI', 'THE LAB - Branch', 'THE LAB - HQ', 'HAIR TAG']
-verified_salons = {'ALEKSANDRA', 'UNIQUE YOU', 'NISANTASI', 'THE LAB - Branch'}
+verified_salons = {'ALEKSANDRA', 'UNIQUE YOU', 'NISANTASI', 'THE LAB - Branch', 'THE LAB - HQ'}
 
 def norm(s):
     if not s:
@@ -81,10 +81,16 @@ def name_ratio(a, b):
     return max(SequenceMatcher(None, a, b).ratio(),
                SequenceMatcher(None, token_sort(a), token_sort(b)).ratio())
 
+# THE LAB - Branch and THE LAB - HQ are two physical locations under one MOHRE
+# establishment license (2063109) - confirmed by the salon owner 17/09/2026. One
+# official work-permit list covers staff at both locations, so match HQ against it too.
+MOHRE_SALON_ALIAS = {'THE LAB - HQ': 'THE LAB - Branch'}
+
 def find_mohre_entry(salon, name_norm):
     """Exact match first, else best fuzzy match (>=0.84) within the same salon - catches
     spelling differences ('ZHARKYNAI' vs 'ZHARKYNAIL') and first/last name order swaps
     ('MUATOVA DIANA' vs 'DIIANA MURATOVA', 'AIZHAN KENZHIBAEVA' vs 'KENZHIBAEVA AIZHA')."""
+    salon = MOHRE_SALON_ALIAS.get(salon, salon)
     key = (salon_norm(salon), name_norm)
     if key in mohre:
         return mohre[key][0], True
